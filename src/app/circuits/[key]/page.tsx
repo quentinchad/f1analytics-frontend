@@ -97,7 +97,7 @@ export default function CircuitPage() {
               <img
                 src={trackUrl}
                 alt={`Tracé ${circuit?.name}`}
-                className="max-w-full max-h-full object-contain drop-shadow-lg"
+                className="max-w-full max-h-full object-contain drop-shadow-lg bg-white"
                 onError={() => setTrackImgError(true)}
               />
             </div>
