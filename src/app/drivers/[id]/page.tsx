@@ -46,8 +46,8 @@ export default function DriverPage() {
   // Pour le graphique — toutes les saisons
   const chartData = history.map((h: any) => ({
     year: h.season_year,
+    position: parseInt(h.position ?? 0),
     points: parseFloat(h.points ?? 0),
-    position: h.position,
     team: h.constructor_name,
   }))
 
@@ -121,20 +121,21 @@ export default function DriverPage() {
       {/* Graphique points par saison */}
       {chartData.length > 0 && (
         <div className="card">
-          <h2 className="font-bold mb-1">Points par saison</h2>
+          <h2 className="font-bold mb-1">Position au championnat</h2>
           <p className="text-f1muted text-xs mb-4">{history.length} saison{history.length > 1 ? 's' : ''} — {chartData[0]?.year} à {chartData[chartData.length-1]?.year}</p>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData} margin={{left:0,right:10}}>
               <CartesianGrid strokeDasharray="3 3" stroke="#38384E" />
               <XAxis dataKey="year" stroke="#888899" tick={{fontSize:11}}
                 tickFormatter={(v) => chartData.length > 15 ? (v % 5 === 0 ? v : '') : v} />
-              <YAxis stroke="#888899" tick={{fontSize:11}} />
+              <YAxis stroke="#888899" tick={{fontSize:11}} reversed domain={[1, 'dataMax']}
+                tickFormatter={(v) => `P${v}`} />
               <Tooltip
                 contentStyle={{background:'#242438',border:'1px solid #38384E',borderRadius:'8px',fontSize:12}}
-                formatter={(val: any, _: any, props: any) => [`${val} pts — ${props.payload.team}`, 'Points']}
+                formatter={(val: any, _: any, props: any) => [`P${val} — ${props.payload.points} pts — ${props.payload.team}`, 'Classement']}
                 labelFormatter={(l) => `Saison ${l}`}
               />
-              <Line type="monotone" dataKey="points" stroke="#E10600" strokeWidth={2}
+              <Line type="monotone" dataKey="position" stroke="#E10600" strokeWidth={2}
                 dot={(p: any) => (
                   <circle key={p.key} cx={p.cx} cy={p.cy} r={3} fill="#E10600" />
                 )}
