@@ -348,7 +348,13 @@ export default function RacePage() {
                               </Link>
                               {!!r.fastest_lap && <span className="ml-2 badge bg-purple-500/20 text-purple-400">FL</span>}
                             </td>
-                            <td className="py-3 text-f1muted hidden sm:table-cell">{r.constructor_name}</td>
+                            <td className="py-3 text-f1muted hidden sm:table-cell">
+                              {r.constructor_id ? (
+                                <Link href={`/teams/${r.constructor_id}`} className="hover:text-f1red transition-colors">
+                                  {r.constructor_name}
+                                </Link>
+                              ) : r.constructor_name}
+                            </td>
                             {selectedSession.type === 'Q' && <>
                               <td className="py-3 text-right font-mono text-xs">{r.q1_time ?? '-'}</td>
                               <td className="py-3 text-right font-mono text-xs hidden md:table-cell">{r.q2_time ?? '-'}</td>
