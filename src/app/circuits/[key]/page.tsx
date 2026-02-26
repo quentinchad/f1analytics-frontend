@@ -6,45 +6,46 @@ import { useParams } from 'next/navigation'
 
 // SVG directs Wikimedia — pas de CORS contrairement aux thumbnails PNG
 function getTrackImageUrl(circuitKey: string): string {
-  const W = 'https://upload.wikimedia.org/wikipedia/commons/'
+  const BASE = 'https://media.formula1.com/image/upload/f_auto,q_auto:best,w_1920/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/'
   const keyMap: Record<string, string> = {
-    albert_park:    W+'archive/3/31/20210403204531!Albert_Lake_Park_Street_Circuit_in_Melbourne%2C_Australia.svg',
-    bahrain:        W+'5/5d/Bahrain_International_Circuit--2004.svg',
-    jeddah:         W+'8/8d/Jeddah_Corniche_Circuit.svg',
-    suzuka:         W+'9/9a/Suzuka_circuit_2005.svg',
-    shanghai:       W+'6/6e/Shanghai_International_Circuit.svg',
-    miami:          W+'0/0b/Miami_International_Autodrome_track_map.svg',
-    imola:          W+'e/e4/Autodromo_Enzo_e_Dino_Ferrari_track_map.svg',
-    monaco:         W+'e/e0/Circuit_de_Monaco.svg',
-    villeneuve:     W+'0/08/Circuit_Gilles_Villeneuve.svg',
-    catalunya:      W+'0/09/Circuit_de_Catalunya.svg',
-    red_bull_ring:  W+'f/f0/Red_Bull_Ring_2016.svg',
-    silverstone:    W+'e/e9/Silverstone_Circuit_2020.svg',
-    hungaroring:    W+'2/25/Hungaroring.svg',
-    spa:            W+'5/53/Circuit_de_Spa-Francorchamps_2007.svg',
-    zandvoort:      W+'5/52/Circuit_Zandvoort_2020.svg',
-    monza:          W+'6/60/Autodromo_Nazionale_Monza.svg',
-    baku:           W+'e/e5/Baku_City_Circuit_2023.svg',
-    marina_bay:     W+'b/b3/Marina_Bay_Street_Circuit_2023.svg',
-    americas:       W+'0/01/Circuit_of_the_Americas_track_map.svg',
-    rodriguez:      W+'5/5e/Autodromo_Hermanos_Rodriguez_2015.svg',
-    interlagos:     W+'a/a9/Autodromo_Jose_Carlos_Pace.svg',
-    vegas:          W+'2/29/Las_Vegas_Street_Circuit_2023.svg',
-    losail:         W+'f/f9/Losail_International_Circuit.svg',
-    yas_marina:     W+'4/44/Yas_Marina_Circuit_2021.svg',
-    sepang:         W+'8/8a/Sepang_International_Circuit.svg',
-    istanbul:       W+'8/8f/Istanbul_Park.svg',
-    nurburgring:    W+'b/b2/N%C3%BCrburgring_GP-Strecke.svg',
-    hockenheimring: W+'3/35/Hockenheimring.svg',
-    magny_cours:    W+'6/60/Circuit_de_Nevers_Magny-Cours.svg',
-    indianapolis:   W+'9/9c/Indianapolis_Motor_Speedway.svg',
-    portimao:       W+'a/af/Algarve_International_Circuit.svg',
-    mugello:        W+'3/34/Mugello_track_map.svg',
-    sochi:          W+'c/c3/Sochi_Autodrom.svg',
-    paul_ricard:    W+'4/4e/Circuit_Paul_Ricard.svg',
-    valencia:       W+'6/6e/Valencia_Street_Circuit.svg',
+    albert_park:    'Australia_Circuit',
+    bahrain:        'Bahrain_Circuit',
+    jeddah:         'Saudi_Arabia_Circuit',
+    suzuka:         'Japan_Circuit',
+    shanghai:       'China_Circuit',
+    miami:          'Miami_Circuit',
+    imola:          'Emilia_Romagna_Circuit',
+    monaco:         'Monaco_Circuit',
+    villeneuve:     'Canada_Circuit',
+    catalunya:      'Spain_Circuit',
+    red_bull_ring:  'Austria_Circuit',
+    silverstone:    'Great_Britain_Circuit',
+    hungaroring:    'Hungary_Circuit',
+    spa:            'Belgium_Circuit',
+    zandvoort:      'Netherlands_Circuit',
+    monza:          'Italy_Circuit',
+    baku:           'Azerbaijan_Circuit',
+    marina_bay:     'Singapore_Circuit',
+    americas:       'USA_Circuit',
+    rodriguez:      'Mexico_Circuit',
+    interlagos:     'Brazil_Circuit',
+    vegas:          'Las_Vegas_Circuit',
+    losail:         'Qatar_Circuit',
+    yas_marina:     'Abu_Dhabi_Circuit',
+    portimao:       'Portugal_Circuit',
+    mugello:        'Tuscany_Circuit',
+    sochi:          'Russia_Circuit',
+    paul_ricard:    'France_Circuit',
+    istanbul:       'Turkey_Circuit',
+    nurburgring:    'Eifel_Circuit',
+    hockenheimring: 'Germany_Circuit',
+    sepang:         'Malaysia_Circuit',
+    indianapolis:   'USA_Circuit',
+    valencia:       'Europe_Circuit',
   }
-  return keyMap[circuitKey] ?? ''
+  const name = keyMap[circuitKey]
+  if (!name) return ''
+  return `${BASE}${name}.webp`
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string | number | null; sub?: string }) {
@@ -97,7 +98,7 @@ export default function CircuitPage() {
               <img
                 src={trackUrl}
                 alt={`Tracé ${circuit?.name}`}
-                className="max-w-full max-h-full object-contain drop-shadow-lg bg-white"
+                className="max-w-full max-h-full object-contain drop-shadow-lg"
                 onError={() => setTrackImgError(true)}
               />
             </div>
