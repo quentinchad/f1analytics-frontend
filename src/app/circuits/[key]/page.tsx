@@ -82,7 +82,7 @@ export default function CircuitPage() {
   const lapRecord = data?.lap_record
   const winners: any[] = data?.winners ?? []
   const displayedWinners = showAll ? winners : winners.slice(0, 10)
-  const trackUrl = getTrackImageUrl(circuitKey)
+  const trackUrl = circuit?.svg_url || getTrackImageUrl(circuitKey)
 
   return (
     <div className="space-y-6">
