@@ -94,12 +94,11 @@ export default function CircuitPage() {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Tracé du circuit — affiché en haut sur desktop, grand format */}
           {trackUrl && !trackImgError ? (
-            <div className="flex-shrink-0 flex items-center justify-center bg-f1border/10 rounded-xl p-4 w-full md:w-80 lg:w-96 md:h-64 lg:h-72">
+            <div className="flex-shrink-0 flex items-center justify-center bg-f1border/10 rounded-xl p-4 w-full md:w-80 lg:w-96">
               <img
                 src={trackUrl}
                 alt={`Tracé ${circuit?.name}`}
-                className="max-w-full max-h-full object-contain drop-shadow-lg bg-white"
-                onError={() => setTrackImgError(true)}
+                className="w-full h-auto object-contain drop-shadow-lg bg-white"
               />
             </div>
           ) : null}
