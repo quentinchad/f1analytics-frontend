@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-f1dark text-f1text;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-f1card border border-f1border rounded-xl p-5;
+  }
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+  .badge {
+    @apply px-2 py-0.5 rounded text-xs font-semibold;
+  }
+  .badge-soft {
+    @apply px-2 py-0.5 text-xs rounded bg-f1border text-f1muted;
+  }
+  .btn {
+    @apply px-4 py-2 rounded-lg text-sm font-semibold transition-colors;
+  }
+  .btn-primary {
+    @apply btn bg-f1red hover:bg-red-700 text-white;
+  }
+  .btn-ghost {
+    @apply btn border border-f1border hover:bg-f1border text-f1muted hover:text-white;
+  }
+  .skeleton {
+    @apply animate-pulse bg-f1border rounded;
+  }
+  .compound-soft { @apply badge bg-yellow-500/20 text-yellow-400; }
+  .compound-medium { @apply badge bg-yellow-400/20 text-yellow-300; }
+  .compound-hard { @apply badge bg-gray-400/20 text-gray-300; }
+  .compound-inter { @apply badge bg-green-500/20 text-green-400; }
+  .compound-wet { @apply badge bg-blue-500/20 text-blue-400; }
+}
