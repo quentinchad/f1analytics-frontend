@@ -182,10 +182,15 @@ export default function RacePage() {
   const [tab, setTab]                 = useState<'results' | 'strategy' | 'summary'>('results')
   const [loading, setLoading]         = useState(true)
   const [sessionLoading, setSessionLoading] = useState(false)
+  const [totalRounds, setTotalRounds]  = useState<number>(0)
 
   useEffect(() => {
-    api.getRace(year, round).then(data => {
+    Promise.all([
+      api.getRace(year, round),
+      api.getRaces(year),
+    ]).then(([data, races]) => {
       setRaceData(data)
+      setTotalRounds(Array.isArray(races) ? races.length : 0)
       // Auto-charger la session Race (type R) par défaut
       const ordered = (data?.sessions ?? []).filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
       const raceSession = ordered.find((s: any) => s.type === 'R') ?? ordered[ordered.length - 1]
@@ -248,8 +253,29 @@ export default function RacePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
         <Link href={`/seasons/${year}`} className="text-f1muted hover:text-white text-sm">← {year} Season</Link>
+        {!loading && (
+          <div className="flex items-center gap-1">
+            {round > 1 ? (
+              <Link href={`/seasons/${year}/${round - 1}`}
+                className="btn-ghost text-xs px-3 py-1">
+                ← Round {round - 1}
+              </Link>
+            ) : (
+              <span className="btn-ghost text-xs px-3 py-1 opacity-30 cursor-default">←</span>
+            )}
+            <span className="text-f1muted text-xs px-1">{round} / {totalRounds || '?'}</span>
+            {totalRounds === 0 || round < totalRounds ? (
+              <Link href={`/seasons/${year}/${round + 1}`}
+                className="btn-ghost text-xs px-3 py-1">
+                Round {round + 1} →
+              </Link>
+            ) : (
+              <span className="btn-ghost text-xs px-3 py-1 opacity-30 cursor-default">→</span>
+            )}
+          </div>
+        )}
       </div>
 
       {loading ? (
