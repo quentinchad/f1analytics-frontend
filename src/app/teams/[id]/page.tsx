@@ -79,7 +79,7 @@ export default function TeamPage() {
           <div className="flex gap-6 items-start">
             <div className="w-24 h-24 rounded-xl bg-f1border/30 overflow-hidden flex items-center justify-center flex-shrink-0">
               {logoUrl && !imgError ? (
-                <img src={logoUrl} alt={team?.name ?? ''} className="w-full h-full object-contain p-2"
+                <img src={logoUrl} alt={team?.name ?? ''} className="w-full h-full object-contain p-2 bg-white"
                   onError={() => setImgError(true)} />
               ) : (
                 <span className="text-3xl font-bold" style={{ color }}>
