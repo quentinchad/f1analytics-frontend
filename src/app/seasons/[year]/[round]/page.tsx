@@ -191,10 +191,18 @@ export default function RacePage() {
     ]).then(([data, races]) => {
       setRaceData(data)
       setTotalRounds(Array.isArray(races) ? races.length : 0)
-      // Auto-charger la session Race (type R) par défaut
-      const ordered = (data?.sessions ?? []).filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
-      const raceSession = ordered.find((s: any) => s.type === 'R') ?? ordered[ordered.length - 1]
-      if (raceSession) loadSession(raceSession)
+
+      // Ne pas tenter de charger les résultats pour les courses futures ou du jour
+      const raceDate = data?.race?.date ? new Date(data.race.date) : null
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const isPast = raceDate && raceDate < today
+
+      if (isPast) {
+        const ordered = (data?.sessions ?? []).filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
+        const raceSession = ordered.find((s: any) => s.type === 'R') ?? ordered[ordered.length - 1]
+        if (raceSession) loadSession(raceSession)
+      }
     }).finally(() => setLoading(false))
   }, [year, round])
 
@@ -240,6 +248,22 @@ export default function RacePage() {
 
   const race = raceData?.race
   const sessions = raceData?.sessions ?? []
+
+  // Statut du GP selon la date
+  const getRaceStatus = () => {
+    if (!race?.date) return 'unknown'
+    const raceDate = new Date(race.date)
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const raceDateOnly = new Date(raceDate.getFullYear(), raceDate.getMonth(), raceDate.getDate())
+    const diffDays = Math.ceil((raceDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays > 0) return 'future'       // course pas encore eu lieu
+    if (diffDays === 0) return 'today'      // jour J — résultats peut-être pas dispo
+    if (diffDays >= -1) return 'recent'     // lendemain — résultats parfois pas encore officiels
+    return 'past'                           // course passée, résultats disponibles
+  }
+  const raceStatus = getRaceStatus()
+  const shouldLoadResults = raceStatus === 'past'
 
   // Tri des résultats par position (gère string et int, DNF/DSQ en fin)
   const results = [...(sessionData?.results ?? [])].sort((a, b) => {
@@ -296,23 +320,79 @@ export default function RacePage() {
           </div>
 
           {/* Sessions — on masque les FP, ordre logique du weekend */}
-          <div className="flex flex-wrap gap-2 mt-6">
-            {sessions
-              .filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
-              .sort((a: any, b: any) => {
-                const order: Record<string, number> = { SQ: 1, SS: 1, S: 2, Q: 3, R: 4 }
-                return (order[a.type] ?? 9) - (order[b.type] ?? 9)
-              })
-              .map((s: any) => (
-              <button
-                key={s.id}
-                onClick={() => loadSession(s)}
-                className={`btn ${selectedSession?.id === s.id ? 'btn-primary' : 'btn-ghost'} text-xs`}
-              >
-                {SESSION_LABELS[s.type] || s.type}
-              </button>
-            ))}
-          </div>
+          {raceStatus === 'past' && (
+            <div className="flex flex-wrap gap-2 mt-6">
+              {sessions
+                .filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
+                .sort((a: any, b: any) => {
+                  const order: Record<string, number> = { SQ: 1, SS: 1, S: 2, Q: 3, R: 4 }
+                  return (order[a.type] ?? 9) - (order[b.type] ?? 9)
+                })
+                .map((s: any) => (
+                <button
+                  key={s.id}
+                  onClick={() => loadSession(s)}
+                  className={`btn ${selectedSession?.id === s.id ? 'btn-primary' : 'btn-ghost'} text-xs`}
+                >
+                  {SESSION_LABELS[s.type] || s.type}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bannière course future */}
+      {!loading && raceStatus === 'future' && race?.date && (
+        <div className="card text-center py-10 space-y-3">
+          <div className="text-4xl">🏁</div>
+          <h2 className="text-xl font-bold">Course à venir</h2>
+          <p className="text-f1muted text-sm">
+            Le {new Date(race.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+          {(() => {
+            const diff = Math.ceil((new Date(race.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+            return <p className="text-f1red font-bold text-lg">Dans {diff} jour{diff > 1 ? 's' : ''}</p>
+          })()}
+        </div>
+      )}
+
+      {/* Bannière course aujourd'hui */}
+      {!loading && raceStatus === 'today' && (
+        <div className="card border border-f1red/40 text-center py-10 space-y-3">
+          <div className="text-4xl">🔴</div>
+          <h2 className="text-xl font-bold">C'est aujourd'hui !</h2>
+          <p className="text-f1muted text-sm">La course est en cours ou se déroule aujourd'hui.</p>
+          <p className="text-f1muted text-xs">Les résultats seront disponibles une fois la course terminée et les données officielles publiées.</p>
+          <button
+            onClick={() => {
+              const ordered = sessions.filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
+              const raceSession = ordered.find((s: any) => s.type === 'R') ?? ordered[ordered.length - 1]
+              if (raceSession) loadSession(raceSession)
+            }}
+            className="btn-ghost text-xs mx-auto"
+          >
+            Essayer de charger les résultats
+          </button>
+        </div>
+      )}
+
+      {/* Bannière résultats pas encore officiels (lendemain) */}
+      {!loading && raceStatus === 'recent' && !selectedSession && (
+        <div className="card border border-yellow-500/30 text-center py-10 space-y-3">
+          <div className="text-4xl">⏳</div>
+          <h2 className="text-xl font-bold">Résultats en cours de publication</h2>
+          <p className="text-f1muted text-sm">La course vient de se terminer, les données officielles sont peut-être pas encore disponibles.</p>
+          <button
+            onClick={() => {
+              const ordered = sessions.filter((s: any) => !['FP1','FP2','FP3'].includes(s.type))
+              const raceSession = ordered.find((s: any) => s.type === 'R') ?? ordered[ordered.length - 1]
+              if (raceSession) loadSession(raceSession)
+            }}
+            className="btn-primary text-xs mx-auto"
+          >
+            Charger les résultats
+          </button>
         </div>
       )}
 
