@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
 // SVG directs Wikimedia — pas de CORS contrairement aux thumbnails PNG
 function getTrackImageUrl(circuitKey: string): string {
@@ -48,6 +48,17 @@ function getTrackImageUrl(circuitKey: string): string {
   return `${BASE}${name}.webp`
 }
 
+function useBack(fallback: string) {
+  const router = useRouter()
+  return () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(fallback)
+    }
+  }
+}
+
 function StatCard({ label, value, sub }: { label: string; value: string | number | null; sub?: string }) {
   if (!value) return null
   return (
@@ -66,6 +77,7 @@ export default function CircuitPage() {
   const [loading, setLoading] = useState(true)
   const [trackImgError, setTrackImgError] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const goBack = useBack('/circuits')
 
   useEffect(() => {
     api.getCircuit(circuitKey).then(setData).finally(() => setLoading(false))
@@ -87,7 +99,7 @@ export default function CircuitPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/circuits" className="text-f1muted hover:text-white text-sm">← Circuits</Link>
+      <button onClick={goBack} className="text-f1muted hover:text-white text-sm">← Retour</button>
 
       {/* Header */}
       <div className="card">

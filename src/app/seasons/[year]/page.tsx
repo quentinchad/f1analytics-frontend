@@ -2,7 +2,18 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+
+function useBack(fallback: string) {
+  const router = useRouter()
+  return () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(fallback)
+    }
+  }
+}
 
 export default function SeasonPage() {
   const params = useParams()
@@ -11,6 +22,7 @@ export default function SeasonPage() {
   const [champ, setChamp] = useState<any>(null)
   const [tab, setTab] = useState<'races' | 'drivers' | 'constructors'>('races')
   const [loading, setLoading] = useState(true)
+  const goBack = useBack('/seasons')
 
   useEffect(() => {
     Promise.all([api.getSeason(year), api.getChampionship(year)])
@@ -23,7 +35,7 @@ export default function SeasonPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/seasons" className="text-f1muted hover:text-white text-sm">← Seasons</Link>
+        <button onClick={goBack} className="text-f1muted hover:text-white text-sm">← Retour</button>
         <h1 className="text-3xl font-bold">{year} Formula 1 Season</h1>
       </div>
 

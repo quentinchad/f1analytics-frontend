@@ -2,13 +2,24 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const TEAM_COLORS: Record<string, string> = {
   ferrari: '#DC0000', mclaren: '#FF8000', mercedes: '#00D2BE', 'red_bull': '#3671C6',
   alpine: '#0093CC', aston_martin: '#358C75', williams: '#005AFF', haas: '#B6BABD',
   rb: '#6692FF', sauber: '#52E252',
+}
+
+function useBack(fallback: string) {
+  const router = useRouter()
+  return () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(fallback)
+    }
+  }
 }
 
 function StatCard({ label, value }: { label: string; value: string | number | null }) {
@@ -26,6 +37,7 @@ export default function DriverPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [imgError, setImgError] = useState(false)
+  const goBack = useBack('/drivers')
 
   useEffect(() => {
     api.getDriver(driverId).then(setData).finally(() => setLoading(false))
@@ -64,7 +76,7 @@ export default function DriverPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/drivers" className="text-f1muted hover:text-white text-sm">← Pilotes</Link>
+      <button onClick={goBack} className="text-f1muted hover:text-white text-sm">← Retour</button>
 
       {/* Header */}
       <div className="card">

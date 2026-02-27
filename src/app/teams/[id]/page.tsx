@@ -2,13 +2,24 @@
 import { useEffect, useState, useMemo } from 'react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const TEAM_COLORS: Record<string, string> = {
   ferrari: '#DC0000', mclaren: '#FF8000', mercedes: '#00D2BE', red_bull: '#3671C6',
   alpine: '#0093CC', aston_martin: '#358C75', williams: '#005AFF', haas: '#B6BABD',
   rb: '#6692FF', sauber: '#52E252',
+}
+
+function useBack(fallback: string) {
+  const router = useRouter()
+  return () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(fallback)
+    }
+  }
 }
 
 function StatCard({ label, value }: { label: string; value: string | number | null }) {
@@ -27,6 +38,7 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [imgError, setImgError] = useState(false)
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set())
+  const goBack = useBack('/teams')
 
   useEffect(() => {
     api.getTeam(constructorId).then(setData).finally(() => setLoading(false))
@@ -70,7 +82,7 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/teams" className="text-f1muted hover:text-white text-sm">← Écuries</Link>
+      <button onClick={goBack} className="text-f1muted hover:text-white text-sm">← Retour</button>
 
       {/* Header */}
       <div className="card overflow-hidden p-0">

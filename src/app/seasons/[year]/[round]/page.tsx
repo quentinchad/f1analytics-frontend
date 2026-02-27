@@ -2,12 +2,62 @@
 import { useEffect, useState, useRef } from 'react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
 const SESSION_LABELS: Record<string, string> = {
   FP1: 'Practice 1', FP2: 'Practice 2', FP3: 'Practice 3',
   Q: 'Qualifying', SQ: 'Sprint Qualifying', SS: 'Sprint Shootout',
   R: 'Race', S: 'Sprint',
+}
+
+// Horaires officiels 2026 en UTC (source: FIA / The Race)
+type RoundSchedule = { qDate: string; qUtc: string; rDate: string; rUtc: string; tz: string; satRace?: boolean }
+const SCHEDULE_2026: Record<number, RoundSchedule> = {
+  1:  { qDate: '2026-03-07', qUtc: '04:00', rDate: '2026-03-08', rUtc: '04:00', tz: 'Australia/Melbourne' },
+  2:  { qDate: '2026-03-14', qUtc: '07:00', rDate: '2026-03-15', rUtc: '07:00', tz: 'Asia/Shanghai' },
+  3:  { qDate: '2026-03-28', qUtc: '06:00', rDate: '2026-03-29', rUtc: '05:00', tz: 'Asia/Tokyo' },
+  4:  { qDate: '2026-04-11', qUtc: '15:00', rDate: '2026-04-12', rUtc: '15:00', tz: 'Asia/Bahrain' },
+  5:  { qDate: '2026-04-18', qUtc: '17:00', rDate: '2026-04-19', rUtc: '17:00', tz: 'Asia/Riyadh' },
+  6:  { qDate: '2026-05-02', qUtc: '20:00', rDate: '2026-05-03', rUtc: '20:00', tz: 'America/New_York' },
+  7:  { qDate: '2026-05-23', qUtc: '20:00', rDate: '2026-05-24', rUtc: '20:00', tz: 'America/Toronto' },
+  8:  { qDate: '2026-06-06', qUtc: '13:00', rDate: '2026-06-07', rUtc: '13:00', tz: 'Europe/Monaco' },
+  9:  { qDate: '2026-06-13', qUtc: '13:00', rDate: '2026-06-14', rUtc: '13:00', tz: 'Europe/Madrid' },
+  10: { qDate: '2026-06-27', qUtc: '13:00', rDate: '2026-06-28', rUtc: '13:00', tz: 'Europe/Vienna' },
+  11: { qDate: '2026-07-04', qUtc: '14:00', rDate: '2026-07-05', rUtc: '14:00', tz: 'Europe/London' },
+  12: { qDate: '2026-07-18', qUtc: '13:00', rDate: '2026-07-19', rUtc: '13:00', tz: 'Europe/Brussels' },
+  13: { qDate: '2026-07-25', qUtc: '13:00', rDate: '2026-07-26', rUtc: '13:00', tz: 'Europe/Budapest' },
+  14: { qDate: '2026-08-22', qUtc: '13:00', rDate: '2026-08-23', rUtc: '13:00', tz: 'Europe/Amsterdam' },
+  15: { qDate: '2026-09-05', qUtc: '13:00', rDate: '2026-09-06', rUtc: '13:00', tz: 'Europe/Rome' },
+  16: { qDate: '2026-09-12', qUtc: '13:00', rDate: '2026-09-13', rUtc: '13:00', tz: 'Europe/Madrid' },
+  17: { qDate: '2026-09-25', qUtc: '11:00', rDate: '2026-09-26', rUtc: '11:00', tz: 'Asia/Baku', satRace: true },
+  18: { qDate: '2026-10-10', qUtc: '13:00', rDate: '2026-10-11', rUtc: '12:00', tz: 'Asia/Singapore' },
+  19: { qDate: '2026-10-24', qUtc: '22:00', rDate: '2026-10-25', rUtc: '20:00', tz: 'America/Chicago' },
+  20: { qDate: '2026-10-31', qUtc: '21:00', rDate: '2026-11-01', rUtc: '20:00', tz: 'America/Mexico_City' },
+  21: { qDate: '2026-11-07', qUtc: '18:00', rDate: '2026-11-08', rUtc: '17:00', tz: 'America/Sao_Paulo' },
+  22: { qDate: '2026-11-21', qUtc: '04:00', rDate: '2026-11-22', rUtc: '04:00', tz: 'America/Las_Vegas', satRace: true },
+  23: { qDate: '2026-11-28', qUtc: '13:00', rDate: '2026-11-29', rUtc: '16:00', tz: 'Asia/Qatar' },
+  24: { qDate: '2026-12-05', qUtc: '13:00', rDate: '2026-12-06', rUtc: '13:00', tz: 'Asia/Dubai' },
+}
+
+function useBack(fallback: string) {
+  const router = useRouter()
+  return () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(fallback)
+    }
+  }
+}
+
+function fmtUtc(date: string, utc: string, tz: string): string {
+  try {
+    const d = new Date(`${date}T${utc}:00Z`)
+    return new Intl.DateTimeFormat('fr-FR', {
+      timeZone: tz, weekday: 'short', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit',
+    }).format(d)
+  } catch { return '—' }
 }
 
 const COMPOUND_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
@@ -183,6 +233,8 @@ export default function RacePage() {
   const [loading, setLoading]         = useState(true)
   const [sessionLoading, setSessionLoading] = useState(false)
   const [totalRounds, setTotalRounds]  = useState<number>(0)
+  const [tzMode, setTzMode]            = useState<'france' | 'local'>('france')
+  const goBack = useBack(`/seasons/${year}`)
 
   useEffect(() => {
     Promise.all([
@@ -278,7 +330,7 @@ export default function RacePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Link href={`/seasons/${year}`} className="text-f1muted hover:text-white text-sm">← {year} Season</Link>
+        <button onClick={goBack} className="text-f1muted hover:text-white text-sm">← Retour</button>
         {!loading && (
           <div className="flex items-center gap-1">
             {round > 1 ? (
@@ -343,19 +395,58 @@ export default function RacePage() {
       )}
 
       {/* Bannière course future */}
-      {!loading && raceStatus === 'future' && race?.date && (
-        <div className="card text-center py-10 space-y-3">
-          <div className="text-4xl">🏁</div>
-          <h2 className="text-xl font-bold">Course à venir</h2>
-          <p className="text-f1muted text-sm">
-            Le {new Date(race.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
-          {(() => {
-            const diff = Math.ceil((new Date(race.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-            return <p className="text-f1red font-bold text-lg">Dans {diff} jour{diff > 1 ? 's' : ''}</p>
-          })()}
-        </div>
-      )}
+      {!loading && raceStatus === 'future' && race?.date && (() => {
+        const sched = year === 2026 ? SCHEDULE_2026[round] : null
+        const diff = Math.ceil((new Date(race.date + 'T12:00:00Z').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        const displayTz = tzMode === 'france' ? 'Europe/Paris' : (sched?.tz ?? 'UTC')
+        const slots = sched ? [
+          { label: 'Qualifications', date: sched.qDate, utc: sched.qUtc },
+          { label: sched.satRace ? 'Course (samedi)' : 'Course', date: sched.rDate, utc: sched.rUtc },
+        ] : []
+        return (
+          <div className="card space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-f1muted text-sm">Course à venir</p>
+                <p className="text-f1red font-bold text-lg">Dans {diff} jour{diff > 1 ? 's' : ''}</p>
+              </div>
+              <span className="text-3xl">🏁</span>
+            </div>
+            {sched ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-f1muted text-xs font-semibold uppercase tracking-wide">Horaires</span>
+                  <div className="flex items-center gap-1 bg-f1mid rounded-lg p-0.5 text-xs">
+                    <button onClick={() => setTzMode('france')}
+                      className={`px-2 py-1 rounded-md transition-colors ${tzMode === 'france' ? 'bg-f1border text-white' : 'text-f1muted hover:text-white'}`}>
+                      🇫🇷 France
+                    </button>
+                    <button onClick={() => setTzMode('local')}
+                      className={`px-2 py-1 rounded-md transition-colors ${tzMode === 'local' ? 'bg-f1border text-white' : 'text-f1muted hover:text-white'}`}>
+                      🕐 Local
+                    </button>
+                  </div>
+                </div>
+                {slots.map(s => (
+                  <div key={s.label} className="flex items-center justify-between px-3 py-3 bg-f1mid rounded-lg">
+                    <div>
+                      <p className="text-sm font-semibold">{s.label}</p>
+                      <p className="text-f1muted text-xs mt-0.5">{fmtUtc(s.date, s.utc, displayTz)}</p>
+                    </div>
+                    {tzMode === 'local' && (
+                      <p className="text-f1muted text-xs">{fmtUtc(s.date, s.utc, 'Europe/Paris')} 🇫🇷</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-f1muted text-sm text-center">
+                {new Date(race.date + 'T12:00:00Z').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Bannière course aujourd'hui */}
       {!loading && raceStatus === 'today' && (
