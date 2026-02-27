@@ -39,17 +39,23 @@ export default function ComparePage() {
     }
   }
 
-  // Build chart data: points per round for each driver
-  const chartData: Record<number, any> = {}
-  comparison.forEach((d: any, idx: number) => {
-    let cumulative = 0
-    d.race_results?.forEach((r: any) => {
-      if (!chartData[r.round]) chartData[r.round] = { round: r.round }
-      cumulative += parseFloat(r.points ?? 0)
-      chartData[r.round][d.driver?.driver_id] = cumulative
+  // Build chart data: cumulative points per round for each driver
+  // On collecte d'abord tous les rounds existants dans la saison
+  const allRounds = Array.from(
+    new Set(comparison.flatMap((d: any) => d.race_results?.map((r: any) => r.round) ?? []))
+  ).sort((a: number, b: number) => a - b)
+
+  const sortedChartData = allRounds.map((round: number) => {
+    const entry: Record<string, any> = { round }
+    comparison.forEach((d: any) => {
+      // Cumul jusqu'à ce round inclus
+      const pts = d.race_results
+        ?.filter((r: any) => r.round <= round)
+        .reduce((sum: number, r: any) => sum + parseFloat(r.points ?? 0), 0) ?? 0
+      entry[d.driver?.driver_id] = pts
     })
+    return entry
   })
-  const sortedChartData = Object.values(chartData).sort((a, b) => a.round - b.round)
 
   return (
     <div className="space-y-6">
@@ -121,7 +127,9 @@ export default function ComparePage() {
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       <div>
                         <div className="text-f1muted text-xs">Points</div>
-                        <div className="font-bold text-lg">{d.points_total?.toFixed(0)}</div>
+                        <div className="font-bold text-lg">
+                          {d.championship?.points ?? d.points_total?.toFixed(0) ?? '—'}
+                        </div>
                       </div>
                       <div>
                         <div className="text-f1muted text-xs">Wins</div>
