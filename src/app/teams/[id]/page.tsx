@@ -52,12 +52,22 @@ export default function TeamPage() {
       const years: number[] = Array.isArray(d.seasons) ? d.seasons : [d.season_year].filter(Boolean)
       for (const y of years) {
         if (!map[y]) map[y] = []
-        if (!map[y].find((x: any) => x.driver_id === d.driver_id)) map[y].push(d)
+        if (!map[y].find((x: any) => x.driver_id === d.driver_id)) {
+          // Récupère les points du pilote pour cette saison spécifique
+          const seasonPoints = Array.isArray(d.season_stats)
+            ? (d.season_stats.find((s: any) => s.season_year === y)?.points ?? d.points ?? 0)
+            : (d.season_year === y ? (d.points ?? 0) : 0)
+          map[y].push({ ...d, _seasonPoints: parseFloat(seasonPoints) })
+        }
       }
     }
     return Object.entries(map)
       .sort(([a], [b]) => parseInt(b) - parseInt(a))
-      .map(([year, ds]) => ({ year: parseInt(year), drivers: ds }))
+      .map(([year, ds]) => ({
+        year: parseInt(year),
+        // Tri par points décroissants pour la saison concernée
+        drivers: [...ds].sort((a, b) => b._seasonPoints - a._seasonPoints),
+      }))
   }, [drivers])
 
   if (loading) return (
