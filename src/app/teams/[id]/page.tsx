@@ -41,8 +41,11 @@ export default function TeamPage() {
   const goBack = useBack('/teams')
 
   useEffect(() => {
-    api.getTeam(constructorId).then(setData).finally(() => setLoading(false))
-  }, [constructorId])
+  api.getTeam(constructorId).then(d => {
+    console.log('drivers sample:', d?.drivers?.[0])
+    setData(d)
+  }).finally(() => setLoading(false))
+}, [constructorId])
 
   const drivers: any[] = data?.drivers ?? []
 
